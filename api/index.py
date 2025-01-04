@@ -9,6 +9,9 @@ from firebase_admin import credentials, auth
 import PyPDF2
 from io import BytesIO
 
+# تعيين مسار NLTK
+nltk.data.path.append("/tmp/nltk_data")
+
 app = Flask(__name__, template_folder='../templates')
 CORS(app)
 
@@ -19,13 +22,25 @@ try:
 except Exception as e:
     print(f"Firebase initialization error: {str(e)}")
 
-# تحميل موارد NLTK
-try:
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
-    nltk.download('stopwords')
-except Exception as e:
-    print(f"NLTK download error: {str(e)}")
+# تحميل موارد NLTK فقط إذا لم تكن موجودة
+def download_nltk_data():
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt', download_dir="/tmp/nltk_data")
+    
+    try:
+        nltk.data.find('taggers/averaged_perceptron_tagger')
+    except LookupError:
+        nltk.download('averaged_perceptron_tagger', download_dir="/tmp/nltk_data")
+    
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords', download_dir="/tmp/nltk_data")
+
+# تحميل البيانات عند بدء التطبيق
+download_nltk_data()
 
 def generate_question_from_sentence(sentence, question_type='essay'):
     """Generate a question from a given sentence."""
