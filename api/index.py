@@ -8,7 +8,10 @@ from transformers import pipeline, AutoModelForSeq2SeqGeneration, AutoTokenizer
 import torch
 import random
 
-app = Flask(__name__, static_folder='../static', template_folder='../templates')
+app = Flask(__name__, 
+    static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static'),
+    template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+)
 CORS(app)
 
 # تهيئة نموذج توليد الأسئلة
@@ -177,7 +180,7 @@ def home():
 
 @app.route('/static/<path:path>')
 def serve_static(path):
-    return send_from_directory('../static', path)
+    return send_from_directory(app.static_folder, path)
 
 @app.route('/generate-questions', methods=['POST'])
 def generate_questions():
