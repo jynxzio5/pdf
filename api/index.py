@@ -21,14 +21,27 @@ def load_model():
     global tokenizer, model, question_generator
     if question_generator is None:
         try:
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model = AutoModelForSeq2SeqGeneration.from_pretrained(model_name)
+            print("بدء تحميل النموذج...")
+            # تعيين المسار للتخزين المؤقت
+            cache_dir = os.path.join(os.path.dirname(__file__), 'model_cache')
+            os.makedirs(cache_dir, exist_ok=True)
+            
+            # تحميل النموذج مع تحديد مسار التخزين المؤقت
+            tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+            model = AutoModelForSeq2SeqGeneration.from_pretrained(model_name, cache_dir=cache_dir)
+            
+            # تحديد الجهاز المناسب
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            model = model.to(device)
+            
             question_generator = pipeline(
                 "text2text-generation",
                 model=model,
                 tokenizer=tokenizer,
-                device=0 if torch.cuda.is_available() else -1
+                device=-1  # استخدام CPU دائماً لتجنب مشاكل الذاكرة
             )
+            print("تم تحميل النموذج بنجاح!")
+            return True
         except Exception as e:
             print(f"خطأ في تحميل النموذج: {str(e)}")
             return False
@@ -64,20 +77,24 @@ def clean_text(text):
 
 def split_text_into_chunks(text, max_length=512):
     """تقسيم النص إلى أجزاء صغيرة"""
-    words = text.split()
+    sentences = re.split('[.!؟\n]', text)
     chunks = []
     current_chunk = []
     current_length = 0
     
-    for word in words:
-        if current_length + len(word) + 1 <= max_length:
-            current_chunk.append(word)
-            current_length += len(word) + 1
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+            
+        if current_length + len(sentence) + 1 <= max_length:
+            current_chunk.append(sentence)
+            current_length += len(sentence) + 1
         else:
             if current_chunk:
                 chunks.append(' '.join(current_chunk))
-            current_chunk = [word]
-            current_length = len(word)
+            current_chunk = [sentence]
+            current_length = len(sentence)
     
     if current_chunk:
         chunks.append(' '.join(current_chunk))
@@ -93,14 +110,15 @@ def generate_questions_from_text(text, num_questions=5, question_type='mcq'):
     all_questions = []
     
     for chunk in chunks:
-        if question_type == 'mcq':
-            # توليد سؤال اختيار من متعدد
-            prompt = f"generate mcq question in arabic: {chunk}"
-        else:
-            # توليد سؤال مقالي
-            prompt = f"generate essay question in arabic: {chunk}"
-        
+        if len(all_questions) >= num_questions:
+            break
+            
         try:
+            if question_type == 'mcq':
+                prompt = f"generate mcq question in arabic: {chunk}"
+            else:
+                prompt = f"generate essay question in arabic: {chunk}"
+            
             generated = question_generator(
                 prompt,
                 max_length=128,
@@ -112,31 +130,46 @@ def generate_questions_from_text(text, num_questions=5, question_type='mcq'):
             question_text = generated[0]['generated_text'].strip()
             
             if question_type == 'mcq':
-                # تقسيم النص المولد إلى سؤال وخيارات
                 parts = question_text.split('\n')
-                question = parts[0]
+                question = parts[0] if parts else "ما هو الصحيح مما يلي؟"
                 choices = parts[1:] if len(parts) > 1 else [chunk, "خيار 2", "خيار 3", "خيار 4"]
-                correct_index = 0
+                
+                # التأكد من وجود 4 خيارات على الأقل
+                while len(choices) < 4:
+                    choices.append(f"خيار {len(choices) + 1}")
                 
                 all_questions.append({
                     'question': question,
-                    'choices': choices,
-                    'correct_answer': correct_index
+                    'choices': choices[:4],  # أخذ أول 4 خيارات فقط
+                    'correct_answer': 0
                 })
             else:
                 all_questions.append({
                     'question': question_text,
-                    'answer': chunk
+                    'answer': "يمكنك الإجابة على هذا السؤال بناءً على النص المقدم."
                 })
-            
-            if len(all_questions) >= num_questions:
-                break
                 
         except Exception as e:
             print(f"خطأ في توليد السؤال: {str(e)}")
             continue
     
-    return random.sample(all_questions, min(num_questions, len(all_questions)))
+    # إذا لم نتمكن من توليد أي أسئلة، نستخدم الطريقة البسيطة
+    if not all_questions:
+        if question_type == 'mcq':
+            question = "ما هو الصحيح مما يلي؟"
+            choices = [text[:100], "خيار 2", "خيار 3", "خيار 4"]
+            all_questions.append({
+                'question': question,
+                'choices': choices,
+                'correct_answer': 0
+            })
+        else:
+            all_questions.append({
+                'question': "اشرح النص التالي: " + text[:100],
+                'answer': "يمكنك الإجابة على هذا السؤال بناءً على النص المقدم."
+            })
+    
+    return all_questions[:num_questions]
 
 @app.route('/')
 def home():

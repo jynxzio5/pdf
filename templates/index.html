@@ -1,452 +1,292 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محول PDF إلى أسئلة</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers"></script>
     <style>
-        :root {
-            --primary-color: #4a90e2;
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --border-color: #e0e0e0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Tajawal', sans-serif;
-        }
-
         body {
-            line-height: 1.6;
-            background-color: #f5f7fa;
-            color: var(--text-color);
+            background-color: #f8f9fa;
         }
-
-        .header {
-            background-color: var(--bg-color);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            right: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
         .container {
             max-width: 800px;
-            margin: 80px auto 2rem;
-            padding: 2rem;
-            background: var(--bg-color);
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .upload-section {
-            text-align: center;
-            padding: 2rem;
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-
-        .btn {
-            background: var(--primary-color);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s ease;
-        }
-
-        .btn:hover {
-            background: #357abd;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: left 1rem center;
-            background-size: 1em;
-        }
-
-        .auth-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            color: var(--text-color);
-            transition: all 0.3s ease;
-        }
-
-        .auth-button:hover {
-            opacity: 0.8;
-        }
-
-        .auth-button i {
-            font-size: 24px;
-        }
-
-        #userProfile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #userProfile img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        .user-menu {
-            position: relative;
-            display: inline-block;
-        }
-
-        .user-menu-content {
-            display: none;
-            position: absolute;
-            left: 0;
-            background-color: var(--bg-color);
-            min-width: 160px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 5px;
-            z-index: 1;
-        }
-
-        .user-menu:hover .user-menu-content {
-            display: block;
-        }
-
-        .user-menu-content a {
-            color: var(--text-color);
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            transition: background 0.3s ease;
-        }
-
-        .user-menu-content a:hover {
-            background-color: #f5f5f5;
-        }
-
-        .progress-container {
-            margin: 1rem 0;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress {
-            width: 0%;
-            height: 100%;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            text-align: center;
-            margin-top: 0.5rem;
-            color: var(--text-color);
-        }
-
-        .questions-container {
             margin-top: 2rem;
         }
-
-        .question {
-            background: var(--bg-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        .upload-box {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background-color: white;
+            transition: all 0.3s ease;
         }
-
-        .question h3 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
+        .upload-box:hover {
+            border-color: #0d6efd;
         }
-
-        .choices {
-            list-style: none;
-            margin-top: 1rem;
-        }
-
-        .choices li {
-            padding: 0.8rem;
-            margin-bottom: 0.5rem;
-            background: #f8f9fa;
-            border-radius: 4px;
-            transition: background 0.3s ease;
-        }
-
-        .choices li.correct {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            font-weight: bold;
-        }
-
-        .error-message {
-            color: #f44336;
-            background: #ffebee;
-            padding: 1rem;
-            border-radius: 4px;
-            margin: 1rem 0;
+        .loading {
             display: none;
         }
-
-        .hidden {
-            display: none !important;
+        #questions {
+            margin-top: 2rem;
+        }
+        .question-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-file-pdf"></i>
-            محول PDF إلى أسئلة
-        </div>
-        <div class="user-menu">
-            <button id="loginBtn" class="auth-button">
-                <i class="fas fa-user"></i>
-            </button>
-            <div id="userProfile" class="hidden">
-                <img id="userPhoto" src="" alt="صورة المستخدم">
-                <div class="user-menu-content">
-                    <a href="#" id="logoutBtn">تسجيل الخروج</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="container">
-        <div id="uploadSection" class="hidden">
-            <div class="upload-section">
-                <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                <form id="uploadForm">
-                    <div class="form-group">
-                        <input type="file" id="pdfFile" accept=".pdf" class="form-control" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <select id="questionType" class="form-control" required>
-                            <option value="essay">أسئلة مقالية</option>
-                            <option value="mcq">اختيار من متعدد</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="number" id="numQuestions" class="form-control" min="1" max="10" value="5" required>
-                    </div>
-
-                    <button type="submit" class="btn">
-                        <i class="fas fa-magic"></i>
-                        توليد الأسئلة
+        <h1 class="text-center mb-4">محول PDF إلى أسئلة</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">اختر ملف PDF</h5>
+                
+                <div class="upload-box mb-3" id="dropZone">
+                    <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+                    <p class="mt-2">قم بسحب وإفلات ملف PDF هنا أو</p>
+                    <input type="file" id="fileInput" accept=".pdf" class="d-none">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        اختر ملف
                     </button>
-                </form>
-
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-bar">
-                        <div class="progress" id="progress"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">0%</div>
                 </div>
 
-                <div class="error-message" id="errorMessage"></div>
+                <div class="mb-3">
+                    <label class="form-label">نوع الأسئلة</label>
+                    <select class="form-select" id="questionType">
+                        <option value="mcq">اختيار من متعدد</option>
+                        <option value="essay">أسئلة مقالية</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">عدد الأسئلة</label>
+                    <input type="number" class="form-control" id="numQuestions" value="5" min="1" max="20">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">طريقة المعالجة</label>
+                    <select class="form-select" id="processingMode">
+                        <option value="server">معالجة على السيرفر</option>
+                        <option value="browser">معالجة في المتصفح</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary w-100" id="generateBtn" onclick="generateQuestions()">
+                    توليد الأسئلة
+                </button>
             </div>
         </div>
 
-        <div class="questions-container" id="questionsContainer"></div>
+        <div class="loading text-center mt-4" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+            <p class="mt-2" id="loadingText">جاري تحليل الملف وتوليد الأسئلة...</p>
+        </div>
+
+        <div id="questions"></div>
     </div>
 
     <script>
-        // تهيئة Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDGsJCR3KqM6fhfepju9J8KN6iHGE18G5M",
-            authDomain: "pdf-to-q.firebaseapp.com",
-            projectId: "pdf-to-q",
-            storageBucket: "pdf-to-q.firebasestorage.app",
-            messagingSenderId: "816286003902",
-            appId: "1:816286003902:web:c302a4274975819b13e4ef",
-            measurementId: "G-G6WKPB4CJW"
-        };
+        // متغيرات عامة
+        let pipeline;
+        let tokenizer;
+        let model;
+        let isModelLoaded = false;
 
-        firebase.initializeApp(firebaseConfig);
-
-        // مراقبة حالة تسجيل الدخول
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                document.getElementById('loginBtn').classList.add('hidden');
-                document.getElementById('userProfile').classList.remove('hidden');
-                document.getElementById('userPhoto').src = user.photoURL || 'https://via.placeholder.com/32';
-                document.getElementById('uploadSection').classList.remove('hidden');
-            } else {
-                document.getElementById('loginBtn').classList.remove('hidden');
-                document.getElementById('userProfile').classList.add('hidden');
-                document.getElementById('uploadSection').classList.add('hidden');
+        // تهيئة النموذج في المتصفح
+        async function initializeModel() {
+            try {
+                pipeline = await window.pipeline('text2text-generation', 'd4data/arabic-t5-base-question-generation');
+                isModelLoaded = true;
+                console.log('تم تحميل النموذج بنجاح');
+            } catch (error) {
+                console.error('خطأ في تحميل النموذج:', error);
             }
-        });
+        }
 
-        // تسجيل الدخول
-        document.getElementById('loginBtn').addEventListener('click', function() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().signInWithPopup(provider).catch(function(error) {
-                console.error('خطأ في تسجيل الدخول:', error);
-                showError('حدث خطأ في تسجيل الدخول');
-            });
-        });
+        // معالجة النص في المتصفح
+        async function processInBrowser(text, questionType, numQuestions) {
+            if (!isModelLoaded) {
+                await initializeModel();
+            }
 
-        // تسجيل الخروج
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            firebase.auth().signOut().catch(function(error) {
-                console.error('خطأ في تسجيل الخروج:', error);
-                showError('حدث خطأ في تسجيل الخروج');
-            });
-        });
+            const chunks = text.split(/[.!؟\n]/).filter(chunk => chunk.trim());
+            const questions = [];
 
-        // معالجة النموذج
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            const file = document.getElementById('pdfFile').files[0];
+            for (let i = 0; i < Math.min(chunks.length, numQuestions); i++) {
+                const chunk = chunks[i].trim();
+                if (!chunk) continue;
+
+                try {
+                    const prompt = questionType === 'mcq' 
+                        ? `generate mcq question in arabic: ${chunk}`
+                        : `generate essay question in arabic: ${chunk}`;
+
+                    const result = await pipeline(prompt, {
+                        max_length: 128,
+                        num_return_sequences: 1,
+                        temperature: 0.7
+                    });
+
+                    const questionText = result[0].generated_text.trim();
+
+                    if (questionType === 'mcq') {
+                        const parts = questionText.split('\n');
+                        const question = parts[0] || 'ما هو الصحيح مما يلي؟';
+                        const choices = parts.slice(1);
+                        
+                        while (choices.length < 4) {
+                            choices.push(`خيار ${choices.length + 1}`);
+                        }
+
+                        questions.push({
+                            question: question,
+                            choices: choices.slice(0, 4),
+                            correct_answer: 0
+                        });
+                    } else {
+                        questions.push({
+                            question: questionText,
+                            answer: 'يمكنك الإجابة على هذا السؤال بناءً على النص المقدم.'
+                        });
+                    }
+                } catch (error) {
+                    console.error('خطأ في توليد السؤال:', error);
+                }
+            }
+
+            return questions;
+        }
+
+        // دالة توليد الأسئلة
+        async function generateQuestions() {
+            const fileInput = document.getElementById('fileInput');
             const questionType = document.getElementById('questionType').value;
-            const numQuestions = document.getElementById('numQuestions').value;
-            
-            if (!file) {
-                showError('الرجاء اختيار ملف PDF');
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+            const processingMode = document.getElementById('processingMode').value;
+            const loading = document.getElementById('loading');
+            const questionsDiv = document.getElementById('questions');
+
+            if (!fileInput.files[0]) {
+                alert('الرجاء اختيار ملف PDF');
                 return;
             }
 
-            formData.append('file', file);
-            formData.append('question_type', questionType);
-            formData.append('num_questions', numQuestions);
-
-            const progressContainer = document.getElementById('progressContainer');
-            const progress = document.getElementById('progress');
-            const progressText = document.getElementById('progressText');
-            const errorMessage = document.getElementById('errorMessage');
-            const questionsContainer = document.getElementById('questionsContainer');
-
-            progressContainer.style.display = 'block';
-            errorMessage.style.display = 'none';
-            questionsContainer.innerHTML = '';
+            loading.style.display = 'block';
+            questionsDiv.innerHTML = '';
 
             try {
-                const response = await fetch('/generate-questions', {
-                    method: 'POST',
-                    body: formData
-                });
+                if (processingMode === 'browser') {
+                    // معالجة في المتصفح
+                    const text = await extractTextFromPDF(fileInput.files[0]);
+                    const questions = await processInBrowser(text, questionType, numQuestions);
+                    displayQuestions(questions);
+                } else {
+                    // معالجة على السيرفر
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    formData.append('question_type', questionType);
+                    formData.append('num_questions', numQuestions);
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'حدث خطأ أثناء معالجة الملف');
+                    const response = await fetch('/generate-questions', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    displayQuestions(data.questions);
+                }
+            } catch (error) {
+                alert('حدث خطأ: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // دالة عرض الأسئلة
+        function displayQuestions(questions) {
+            const questionsDiv = document.getElementById('questions');
+            questionsDiv.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+
+                let content = `<h5>السؤال ${index + 1}:</h5><p>${q.question}</p>`;
+
+                if (q.choices) {
+                    content += '<div class="choices">';
+                    q.choices.forEach((choice, i) => {
+                        content += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="q${index}" id="q${index}c${i}">
+                                <label class="form-check-label" for="q${index}c${i}">
+                                    ${choice}
+                                </label>
+                            </div>`;
+                    });
+                    content += '</div>';
+                } else if (q.answer) {
+                    content += `<p class="text-muted">${q.answer}</p>`;
                 }
 
-                const data = await response.json();
-                displayQuestions(data.questions);
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                progressContainer.style.display = 'none';
+                card.innerHTML = content;
+                questionsDiv.appendChild(card);
+            });
+        }
+
+        // إضافة معالجة السحب والإفلات
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#0d6efd';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#dee2e6';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#dee2e6';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                document.getElementById('fileInput').files = files;
+            } else {
+                alert('الرجاء إرفاق ملف PDF فقط');
             }
         });
 
-        function showError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
+        // تهيئة النموذج عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            if (document.getElementById('processingMode').value === 'browser') {
+                initializeModel();
+            }
+        });
 
-        function displayQuestions(questions) {
-            const container = document.getElementById('questionsContainer');
-            container.innerHTML = '';
-            
-            questions.forEach((q, index) => {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question';
-                
-                if (q.choices) {
-                    // سؤال اختيار من متعدد
-                    questionDiv.innerHTML = `
-                        <h3>سؤال ${index + 1}</h3>
-                        <p>${q.question}</p>
-                        <ul class="choices">
-                            ${q.choices.map((choice, i) => `
-                                <li class="${i === q.correct_answer ? 'correct' : ''}">
-                                    ${choice}
-                                    ${i === q.correct_answer ? ' ✓' : ''}
-                                </li>
-                            `).join('')}
-                        </ul>
-                    `;
-                } else {
-                    // سؤال مقالي
-                    questionDiv.innerHTML = `
-                        <h3>سؤال ${index + 1}</h3>
-                        <p>${q.question}</p>
-                        <p><strong>الإجابة المقترحة:</strong> ${q.answer}</p>
-                    `;
-                }
-                
-                container.appendChild(questionDiv);
-            });
-        }
+        // تغيير طريقة المعالجة
+        document.getElementById('processingMode').addEventListener('change', (e) => {
+            if (e.target.value === 'browser' && !isModelLoaded) {
+                initializeModel();
+            }
+        });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf.js/build/pdf.js"></script>
 </body>
 </html>
