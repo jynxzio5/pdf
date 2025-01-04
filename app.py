@@ -44,13 +44,21 @@ except LookupError:
     nltk.download('stopwords')
 
 app = Flask(__name__)
-CORS(app)  # إضافة دعم CORS للسماح بطلبات المصادقة
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+CORS(app)
 
-# Create uploads folder if it doesn't exist
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+# تكوين Flask للـ production
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = '/tmp'  # استخدام مجلد tmp في Vercel
+app.config['DEBUG'] = False  # تعطيل وضع التصحيح في الإنتاج
+
+# التعامل مع الأخطاء
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'حدث خطأ داخلي في الخادم'}), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'الصفحة غير موجودة'}), 404
 
 def generate_question_from_sentence(sentence, question_type='essay'):
     """Generate a question from a given sentence."""
@@ -151,7 +159,11 @@ def save_to_firebase(questions, original_filename):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        app.logger.error(f'خطأ في عرض الصفحة الرئيسية: {str(e)}')
+        return jsonify({'error': 'حدث خطأ في عرض الصفحة'}), 500
 
 @app.route('/auth/callback')
 def auth_callback():
@@ -236,4 +248,10 @@ def upload_file():
         return jsonify({'error': 'يجب رفع ملف PDF فقط'}), 400
 
 if __name__ == '__main__':
+    # تشغيل التطبيق محلياً فقط
     app.run(debug=True)
+else:
+    # تكوين logging للإنتاج
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    app.logger.setLevel(logging.INFO)
