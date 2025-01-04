@@ -98,26 +98,49 @@ def health_check():
 def generate_questions():
     try:
         if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
+            return jsonify({'error': 'لم يتم رفع أي ملف'}), 400
         
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
+            return jsonify({'error': 'لم يتم اختيار ملف'}), 400
         
-        if not file.filename.endswith('.pdf'):
-            return jsonify({'error': 'Only PDF files are allowed'}), 400
+        if not file.filename.lower().endswith('.pdf'):
+            return jsonify({'error': 'يُسمح فقط بملفات PDF'}), 400
+
+        # التحقق من حجم الملف (16MB كحد أقصى)
+        if len(file.read()) > 16 * 1024 * 1024:  # 16MB in bytes
+            return jsonify({'error': 'حجم الملف يتجاوز الحد المسموح به (16MB)'}), 400
+        
+        # إعادة تعيين مؤشر الملف إلى البداية
+        file.seek(0)
+
+        # محاولة قراءة الملف للتأكد من أنه PDF صالح
+        try:
+            PyPDF2.PdfReader(file)
+            file.seek(0)  # إعادة تعيين المؤشر مرة أخرى
+        except Exception as e:
+            return jsonify({'error': 'الملف المرفوع ليس ملف PDF صالح'}), 400
 
         # استخراج النص من الملف
         pdf_text = extract_text_from_pdf(file)
-        if not pdf_text:
-            return jsonify({'error': 'Could not extract text from PDF'}), 400
+        if not pdf_text.strip():
+            return jsonify({'error': 'لم يتم العثور على نص قابل للاستخراج في الملف'}), 400
 
         # تقسيم النص إلى جمل
         sentences = nltk.sent_tokenize(pdf_text)
+        if not sentences:
+            return jsonify({'error': 'لم يتم العثور على جمل كافية في النص'}), 400
         
         # الحصول على عدد الأسئلة المطلوب وتحديد النوع
-        num_questions = int(request.form.get('num_questions', 5))
+        try:
+            num_questions = int(request.form.get('num_questions', 5))
+            num_questions = min(max(1, num_questions), 10)  # تقييد العدد بين 1 و 10
+        except ValueError:
+            num_questions = 5
+
         question_type = request.form.get('question_type', 'essay')
+        if question_type not in ['essay', 'mcq']:
+            question_type = 'essay'
         
         # اختيار جمل عشوائية وتوليد أسئلة منها
         selected_sentences = random.sample(sentences, min(num_questions, len(sentences)))
@@ -128,11 +151,14 @@ def generate_questions():
             if question:
                 questions.append(question)
 
+        if not questions:
+            return jsonify({'error': 'لم نتمكن من توليد أسئلة من النص المقدم'}), 400
+
         return jsonify({'questions': questions}), 200
 
     except Exception as e:
         print(f"Error in generate_questions: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'حدث خطأ أثناء معالجة الملف'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محول PDF إلى أسئلة</title>
-    <!-- إضافة الخطوط -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <!-- مكتبات Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -59,7 +57,7 @@
             padding: 2rem;
             background: var(--bg-color);
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .upload-section {
@@ -196,39 +194,56 @@
             display: none !important;
         }
 
-        /* تحسينات إضافية */
-        .page-title {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary-color);
-        }
-
-        .page-title i {
-            margin-left: 0.5rem;
-        }
-
-        .file-input-wrapper {
+        .user-menu {
             position: relative;
-            overflow: hidden;
             display: inline-block;
         }
 
-        .file-input-wrapper input[type="file"] {
+        .user-menu-content {
+            display: none;
             position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
             left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
+            border-radius: 4px;
         }
 
-        .selected-file {
-            margin-top: 1rem;
-            padding: 0.5rem;
-            background: #f8f9fa;
+        .user-menu:hover .user-menu-content {
+            display: block;
+        }
+
+        .user-menu-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .user-menu-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #f0f0f0;
             border-radius: 4px;
-            font-size: 0.9rem;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -238,15 +253,16 @@
             <i class="fas fa-file-pdf"></i>
             محول PDF إلى أسئلة
         </div>
-        <button id="signInButton" class="auth-button" onclick="showAuthModal()">
-            <i class="fas fa-user"></i>
-        </button>
-        <div id="userProfile" class="hidden">
-            <img id="userAvatar" src="" alt="صورة المستخدم">
-            <span id="userName"></span>
-            <button onclick="signOut()" class="auth-button">
-                <i class="fas fa-sign-out-alt"></i>
+        <div class="user-menu" id="userMenu">
+            <button id="signInButton" class="auth-button" onclick="showAuthModal()">
+                <i class="fas fa-user"></i>
             </button>
+            <div id="userProfile" class="hidden">
+                <img id="userAvatar" src="" alt="صورة المستخدم" style="width: 32px; height: 32px; border-radius: 50%;">
+                <div class="user-menu-content">
+                    <a href="#" id="logoutBtn" onclick="signOut()">تسجيل الخروج</a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -265,6 +281,10 @@
                     <button class="btn">اختر ملف</button>
                 </div>
                 <div id="selectedFile" class="selected-file hidden"></div>
+                <div class="progress-bar-container" id="progressBarContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
             </div>
         </div>
 
@@ -322,11 +342,7 @@
                 // المستخدم مسجل الدخول
                 document.getElementById('signInButton').style.display = 'none';
                 document.getElementById('userProfile').style.display = 'flex';
-                document.getElementById('userProfile').innerHTML = `
-                    <img src="${user.photoURL}" alt="صورة المستخدم">
-                    <span>${user.displayName}</span>
-                    <button onclick="signOut()" class="btn">تسجيل خروج</button>
-                `;
+                document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/32';
             } else {
                 // المستخدم غير مسجل الدخول
                 document.getElementById('signInButton').style.display = 'block';
@@ -438,21 +454,43 @@
             formData.append('count', document.getElementById('questionCount').value);
 
             try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
 
-                const data = await response.json();
-                if (data.success) {
-                    alert('تم توليد الأسئلة بنجاح!');
-                    // يمكنك هنا إضافة كود لعرض الأسئلة
-                } else {
-                    alert('حدث خطأ: ' + data.error);
-                }
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        document.getElementById('progressBar').style.width = percentComplete + '%';
+                        document.getElementById('progressText').textContent = Math.round(percentComplete) + '%';
+                    }
+                };
+
+                xhr.onload = function() {
+                    document.getElementById('progressBarContainer').style.display = 'none';
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            alert('تم توليد الأسئلة بنجاح!');
+                            // يمكنك هنا إضافة كود لعرض الأسئلة
+                        } else {
+                            alert('حدث خطأ: ' + response.error);
+                        }
+                    } else {
+                        alert('حدث خطأ أثناء معالجة الملف');
+                    }
+                };
+
+                xhr.onerror = function() {
+                    document.getElementById('progressBarContainer').style.display = 'none';
+                    alert('حدث خطأ في الاتصال بالخادم');
+                };
+
+                xhr.send(formData);
+                document.getElementById('progressBarContainer').style.display = 'block';
             } catch (error) {
-                console.error('Error:', error);
-                alert('حدث خطأ أثناء معالجة الملف');
+                document.getElementById('progressBarContainer').style.display = 'none';
+                alert('حدث خطأ أثناء رفع الملف');
+                console.error(error);
             }
         }
     </script>
