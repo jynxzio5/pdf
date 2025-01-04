@@ -5,76 +5,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محول PDF إلى أسئلة</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Tajawal', sans-serif;
         }
 
         body {
-            background-color: #f5f5f5;
-            color: #333;
             line-height: 1.6;
+            background-color: #f5f7fa;
+            color: var(--text-color);
+        }
+
+        .header {
+            background-color: var(--bg-color);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
         }
 
         .container {
             max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            color: #2196F3;
-            margin-bottom: 0.5rem;
+            margin: 80px auto 2rem;
+            padding: 2rem;
+            background: var(--bg-color);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .upload-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 2rem;
         }
 
-        .file-input {
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
             margin-bottom: 1rem;
         }
 
-        .options {
-            margin: 1rem 0;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        select, input[type="number"] {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        button {
-            background-color: #2196F3;
+        .btn {
+            background: var(--primary-color);
             color: white;
+            padding: 0.8rem 1.5rem;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.3s;
+            transition: background 0.3s ease;
         }
 
-        button:hover {
-            background-color: #1976D2;
+        .btn:hover {
+            background: #357abd;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: left 1rem center;
+            background-size: 1em;
+        }
+
+        .auth-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .auth-button:hover {
+            opacity: 0.8;
+        }
+
+        .auth-button i {
+            font-size: 24px;
+        }
+
+        #userProfile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #userProfile img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-menu-content {
+            display: none;
+            position: absolute;
+            left: 0;
+            background-color: var(--bg-color);
+            min-width: 160px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        .user-menu:hover .user-menu-content {
+            display: block;
+        }
+
+        .user-menu-content a {
+            color: var(--text-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.3s ease;
+        }
+
+        .user-menu-content a:hover {
+            background-color: #f5f5f5;
         }
 
         .progress-container {
@@ -93,22 +195,22 @@
         .progress {
             width: 0%;
             height: 100%;
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             transition: width 0.3s ease;
         }
 
         .progress-text {
+            text-align: center;
             margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #666;
+            color: var(--text-color);
         }
 
-        .questions {
+        .questions-container {
             margin-top: 2rem;
         }
 
         .question {
-            background: white;
+            background: var(--bg-color);
             padding: 1.5rem;
             border-radius: 8px;
             margin-bottom: 1rem;
@@ -116,7 +218,7 @@
         }
 
         .question h3 {
-            color: #2196F3;
+            color: var(--primary-color);
             margin-bottom: 1rem;
         }
 
@@ -126,66 +228,138 @@
         }
 
         .choices li {
-            padding: 0.5rem;
+            padding: 0.8rem;
             margin-bottom: 0.5rem;
             background: #f8f9fa;
             border-radius: 4px;
+            transition: background 0.3s ease;
         }
 
-        .correct {
-            color: #4CAF50;
+        .choices li.correct {
+            background-color: #e8f5e9;
+            color: #2e7d32;
             font-weight: bold;
         }
 
         .error-message {
             color: #f44336;
-            margin: 1rem 0;
-            padding: 1rem;
             background: #ffebee;
+            padding: 1rem;
             border-radius: 4px;
+            margin: 1rem 0;
             display: none;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>محول PDF إلى أسئلة</h1>
-            <p>قم برفع ملف PDF لتوليد أسئلة منه</p>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-file-pdf"></i>
+            محول PDF إلى أسئلة
         </div>
-
-        <div class="upload-section">
-            <form id="uploadForm">
-                <div class="file-input">
-                    <input type="file" id="pdfFile" accept=".pdf" required>
+        <div class="user-menu">
+            <button id="loginBtn" class="auth-button">
+                <i class="fas fa-user"></i>
+            </button>
+            <div id="userProfile" class="hidden">
+                <img id="userPhoto" src="" alt="صورة المستخدم">
+                <div class="user-menu-content">
+                    <a href="#" id="logoutBtn">تسجيل الخروج</a>
                 </div>
-                
-                <div class="options">
-                    <select id="questionType" required>
-                        <option value="essay">أسئلة مقالية</option>
-                        <option value="mcq">اختيار من متعدد</option>
-                    </select>
-                    
-                    <input type="number" id="numQuestions" min="1" max="10" value="5" required>
-                </div>
-
-                <button type="submit">توليد الأسئلة</button>
-            </form>
-
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar">
-                    <div class="progress" id="progress"></div>
-                </div>
-                <div class="progress-text" id="progressText">0%</div>
             </div>
+        </div>
+    </div>
 
-            <div class="error-message" id="errorMessage"></div>
+    <div class="container">
+        <div id="uploadSection" class="hidden">
+            <div class="upload-section">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <input type="file" id="pdfFile" accept=".pdf" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <select id="questionType" class="form-control" required>
+                            <option value="essay">أسئلة مقالية</option>
+                            <option value="mcq">اختيار من متعدد</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" id="numQuestions" class="form-control" min="1" max="10" value="5" required>
+                    </div>
+
+                    <button type="submit" class="btn">
+                        <i class="fas fa-magic"></i>
+                        توليد الأسئلة
+                    </button>
+                </form>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+            </div>
         </div>
 
-        <div class="questions" id="questionsContainer"></div>
+        <div class="questions-container" id="questionsContainer"></div>
     </div>
 
     <script>
+        // تهيئة Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGsJCR3KqM6fhfepju9J8KN6iHGE18G5M",
+            authDomain: "pdf-to-q.firebaseapp.com",
+            projectId: "pdf-to-q",
+            storageBucket: "pdf-to-q.firebasestorage.app",
+            messagingSenderId: "816286003902",
+            appId: "1:816286003902:web:c302a4274975819b13e4ef",
+            measurementId: "G-G6WKPB4CJW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        // مراقبة حالة تسجيل الدخول
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                document.getElementById('loginBtn').classList.add('hidden');
+                document.getElementById('userProfile').classList.remove('hidden');
+                document.getElementById('userPhoto').src = user.photoURL || 'https://via.placeholder.com/32';
+                document.getElementById('uploadSection').classList.remove('hidden');
+            } else {
+                document.getElementById('loginBtn').classList.remove('hidden');
+                document.getElementById('userProfile').classList.add('hidden');
+                document.getElementById('uploadSection').classList.add('hidden');
+            }
+        });
+
+        // تسجيل الدخول
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).catch(function(error) {
+                console.error('خطأ في تسجيل الدخول:', error);
+                showError('حدث خطأ في تسجيل الدخول');
+            });
+        });
+
+        // تسجيل الخروج
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            firebase.auth().signOut().catch(function(error) {
+                console.error('خطأ في تسجيل الخروج:', error);
+                showError('حدث خطأ في تسجيل الخروج');
+            });
+        });
+
+        // معالجة النموذج
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
