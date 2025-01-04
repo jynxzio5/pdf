@@ -171,7 +171,8 @@
             try {
                 loading.style.display = 'block';
                 document.getElementById('status').textContent = 'جاري تحميل النموذج...';
-                pipeline = await window.pipeline('text2text-generation', 'd4data/arabic-t5-base-question-generation');
+                const { pipeline } = await import('@xenova/transformers');
+                window.pipeline = await pipeline('text2text-generation', 'd4data/arabic-t5-base-question-generation');
                 document.getElementById('status').textContent = 'تم تحميل النموذج بنجاح!';
                 loading.style.display = 'none';
                 return true;
@@ -226,7 +227,7 @@
 
         // دالة توليد الأسئلة
         async function generateQuestions() {
-            if (!pdfText) return;
+            if (!pdfText || !window.pipeline) return;
             
             const numQuestions = parseInt(document.getElementById('numQuestions').value);
             const questionType = document.getElementById('questionType').value;
@@ -245,7 +246,7 @@
                             ? `generate multiple choice question in arabic: ${paragraph}`
                             : `generate essay question in arabic: ${paragraph}`;
 
-                        const result = await pipeline(prompt, {
+                        const result = await window.pipeline(prompt, {
                             max_length: 128,
                             num_return_sequences: 1
                         });
